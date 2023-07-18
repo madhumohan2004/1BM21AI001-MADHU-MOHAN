@@ -1,0 +1,115 @@
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <limits>
+
+using namespace std;
+
+// Class representing a graph vertex
+class Vertex {
+public:
+    int id;
+    int distance;
+    bool visited;
+    vector<pair<int, int>> neighbors; // (vertex id, edge weight)
+
+    Vertex(int id) {
+        this->id = id;
+        distance = numeric_limits<int>::max(); // Initialize distance to infinity
+        visited = false;
+    }
+
+    void addNeighbor(int neighborId, int weight) {
+        neighbors.push_back(make_pair(neighborId, weight));
+    }
+};
+
+// Class representing a graph
+class Graph {
+public:
+    int V; // Number of vertices
+    vector<Vertex> vertices;
+
+    Graph(int V) {
+        this->V = V;
+        for (int i = 0; i < V; ++i) {
+            vertices.push_back(Vertex(i));
+        }
+    }
+
+    void addEdge(int src, int dest, int weight) {
+        vertices[src].addNeighbor(dest, weight);
+        vertices[dest].addNeighbor(src, weight); // Assuming an undirected graph
+    }
+
+    void dijkstraShortestPath(int src) {
+        // Initialize the distance of the source vertex
+        vertices[src].distance = 0;
+
+        // Custom comparator for priority queue (min heap)
+        auto compare = [](const Vertex& a, const Vertex& b) {
+            return a.distance > b.distance;
+        };
+
+        priority_queue<Vertex, vector<Vertex>, decltype(compare)> pq(compare);
+        pq.push(vertices[src]);
+
+        while (!pq.empty()) {
+            Vertex current = pq.top();
+            pq.pop();
+
+            if (current.visited)
+                continue;
+
+            current.visited = true;
+
+            for (const auto& neighbor : current.neighbors) {
+                int neighborId = neighbor.first;
+                int weight = neighbor.second;
+
+                Vertex& neighborVertex = vertices[neighborId];
+
+                if (!neighborVertex.visited && current.distance + weight < neighborVertex.distance) {
+                    neighborVertex.distance = current.distance + weight;
+                    pq.push(neighborVertex);
+                }
+            }
+        }
+    }
+};
+
+int main() {
+    int V, E;
+    cout << "Enter the number of vertices in the graph: ";
+    cin >> V;
+    cout << "Enter the number of edges in the graph: ";
+    cin >> E;
+
+    Graph graph(V);
+
+    cout << "Enter the source, destination, and weight of each edge:\n";
+    for (int i = 0; i < E; ++i) {
+        int src, dest, weight;
+        cin >> src >> dest >> weight;
+        graph.addEdge(src, dest, weight);
+    }
+
+    int source;
+    cout << "Enter the source vertex: ";
+    cin >> source;
+
+    graph.dijkstraShortestPath(source);
+
+    cout << "Shortest distances from source " << source << ":\n";
+    for (const auto& vertex : graph.vertices) {
+        cout << "Vertex " << vertex.id << ": ";
+        if (vertex.distance == numeric_limits<int>::max()) {
+            cout << "INF";
+        } else {
+            cout << vertex.distance;
+        }
+        cout << endl;
+    }
+
+    return 0;
+}
