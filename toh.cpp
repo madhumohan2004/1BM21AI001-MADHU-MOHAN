@@ -1,31 +1,24 @@
 #include<iostream>
-#include<conio.h>
 using namespace std;
-int count1=0;
-void TOH(int d, char t1, char t2, char t3)
-{
-if(d==1)
-{
-cout<<"\nShift top disk from tower "<<t1<<" to tower "<<t2;
-count1++;
-return;
+
+class tower{
+public :
+    int n;
+    void toh(int num,char A,char B,char C){
+    if(num>0){
+    toh(num-1, A, C, B);
+    cout<<"Move a disk "<<num<<" from "<<" "<<A<<" to"<<" "<<C<<endl;
+    toh( num-1, B, A, C);
+  }
 }
-TOH(d-1,t1,t3,t2);
-cout<<"\nShift top disk from tower "<<t1<<" to tower "<<t2;
-count1++;
-TOH(d-1,t3,t2,t1);
-}
-int main()
-{
-int disk;
-cout<<"Enter the number of disks: "; cin>>disk;
-if(disk<1)
-cout<<"There are no disks to shift";
-else
-cout<<"There are "<<disk<<" disks in tower 1\n";
-TOH(disk, '1','2','3');
-cout<<"\n\n"<<disk<<" disks in tower 1 are shifted to tower 2"<<endl;
-cout<<"Total number of operations performed are "<<count1;
-getch();
-return 0;
+}t;
+
+
+int main(){
+
+  cout<<"Enter the no. of disks"<<endl;
+  cin>>t.n;
+
+  t.toh(t.n,'A','B','C');//A is the source tower , C is destination tower ,B is auxiliary tower
+  cout<<endl;
 }
