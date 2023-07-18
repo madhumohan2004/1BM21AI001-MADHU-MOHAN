@@ -1,45 +1,34 @@
 #include<iostream>
 using namespace std;
-class bubsort{
-public:
-void swapping(int &a, int &b) {
-   int temp;
-   temp = a;
-   a = b;
-   b = temp;
-}
-void displayyyy(int *array, int size) {
-   for(int i = 0; i<size; i++)
-      cout << array[i] << " ";
-   cout << endl;
-}
-void bubbles(int *array, int size) {
-   for(int i = 0; i<size; i++) {
-      int swapped = 0;
-      for(int j = 0; j<size-i-1; j++) {
-         if(array[j] > array[j+1]) {
-            swapping(array[j], array[j+1]);
-            swapped = 1;
-         }
-      }
-      if(!swapped)
-         break;
-   }
-}};
 
-int main() {
-   int n;
-   cout << "Enter the number of elements: ";
-   cin >> n;
-   int arr[n];
-   cout << "Enter elements:" ;
-   for(int i = 0; i<n; i++) {
-      cin >> arr[i];
-   }
-   cout << "Array before Sorting: ";
-   bubsort bs;
-   bs.displayyyy(arr, n);
-   bs.bubbles(arr, n);
-   cout << "Array after Sorting: ";
-   bs.displayyyy(arr, n);
+class sort{
+    public : int n,a[25],i,j,temp;
+            
+    
+    void bubble_sort(){
+    for(i=0;i<n-1;i++){
+        for(j=0;j<n-i-1;j++)
+        {
+            if(a[j]>a[j+1]){
+                temp = a[j];
+                a[j]=a[j+1];
+                a[j+1]=temp;
+            }
+        }
+     }
+    }
+}t;
+
+int main(){
+    int i;
+    cout<<"\nEnter the number of elements: ";
+    cin>>t.n;
+    cout<<"\nEnter "<<t.n<<" elements: ";
+    for(i=0;i<t.n;i++)
+     cin>>t.a[i];
+    t.bubble_sort();
+    cout<<"\nSorted array is: ";
+    for(i=0;i<t.n;i++)
+     cout<<t.a[i]<<" ";
+    
 }
