@@ -1,0 +1,96 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+// Class representing a graph edge
+class Edge {
+public:
+    int src, dest, weight;
+};
+
+// Class representing a graph
+class Graph {
+public:
+    int V, E;
+    vector<Edge> edges;
+
+    // Constructor
+    Graph(int V, int E) {
+        this->V = V;
+        this->E = E;
+    }
+
+    // Function to add an edge to the graph
+    void addEdge(int src, int dest, int weight) {
+        Edge edge;
+        edge.src = src;
+        edge.dest = dest;
+        edge.weight = weight;
+        edges.push_back(edge);
+    }
+
+    // Function to find the parent of a vertex
+    int findParent(vector<int>& parent, int i) {
+        if (parent[i] == -1)
+            return i;
+        return findParent(parent, parent[i]);
+    }
+
+    // Function to perform union of two subsets
+    void unionSets(vector<int>& parent, int x, int y) {
+        int xset = findParent(parent, x);
+        int yset = findParent(parent, y);
+        parent[xset] = yset;
+    }
+
+    // Function to implement Kruskal's algorithm
+    void kruskalMST() {
+        vector<Edge> result;
+
+        // Sort edges in non-decreasing order by weight
+        sort(edges.begin(), edges.end(), [](const Edge& a, const Edge& b) {
+            return a.weight < b.weight;
+        });
+
+        vector<int> parent(V, -1);
+
+        for (int i = 0; i < E; ++i) {
+            int x = findParent(parent, edges[i].src);
+            int y = findParent(parent, edges[i].dest);
+
+            if (x != y) {
+                result.push_back(edges[i]);
+                unionSets(parent, x, y);
+            }
+        }
+
+        // Print the resulting Minimum Spanning Tree (MST)
+        cout << "Edges in the MST:\n";
+        for (const auto& edge : result) {
+            cout << edge.src << " -- " << edge.dest << " with weight " << edge.weight << endl;
+        }
+    }
+};
+
+int main() {
+    int V, E;
+    cout << "Enter the number of vertices in the graph: ";
+    cin >> V;
+    cout << "Enter the number of edges in the graph: ";
+    cin >> E;
+
+    Graph graph(V, E);
+
+    cout << "Enter the source, destination, and weight of each edge:\n";
+    for (int i = 0; i < E; ++i) {
+        int src, dest, weight;
+        cin >> src >> dest >> weight;
+        graph.addEdge(src, dest, weight);
+    }
+
+    graph.kruskalMST();
+
+    return 0;
+}
