@@ -1,0 +1,79 @@
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <climits>
+
+using namespace std;
+
+class Graph {
+private:
+    int numVertices;
+    vector<vector<pair<int, int>>> adjacencyList;
+
+public:
+    Graph(int vertices) {
+        numVertices = vertices;
+        adjacencyList.resize(numVertices);
+    }
+
+    void addEdge(int src, int dest, int weight) {
+        adjacencyList[src].push_back(make_pair(dest, weight));
+        adjacencyList[dest].push_back(make_pair(src, weight));
+    }
+
+    void primMST() {
+        priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq;
+
+        int src = 0; // Start with vertex 0 as the source
+        vector<int> key(numVertices, INT_MAX);
+        vector<int> parent(numVertices, -1);
+        vector<bool> inMST(numVertices, false);
+
+        pq.push(make_pair(0, src));
+        key[src] = 0;
+
+        while (!pq.empty()) {
+            int u = pq.top().second;
+            pq.pop();
+            inMST[u] = true;
+
+            for (const auto& neighbor : adjacencyList[u]) {
+                int v = neighbor.first;
+                int weight = neighbor.second;
+
+                if (!inMST[v] && weight < key[v]) {
+                    key[v] = weight;
+                    parent[v] = u;
+                    pq.push(make_pair(key[v], v));
+                }
+            }
+        }
+
+        // Print the MST
+        cout << "Minimum Spanning Tree:" << endl;
+        for (int i = 1; i < numVertices; i++) {
+            cout << parent[i] << " - " << i << endl;
+        }
+    }
+};
+
+int main() {
+    int numVertices, numEdges;
+    cout << "Enter the number of vertices: ";
+    cin >> numVertices;
+    cout << "Enter the number of edges: ";
+    cin >> numEdges;
+
+    Graph graph(numVertices);
+
+    cout << "Enter the edges (source, destination, weight):" << endl;
+    for (int i = 0; i < numEdges; i++) {
+        int src, dest, weight;
+        cin >> src >> dest >> weight;
+        graph.addEdge(src, dest, weight);
+    }
+
+    graph.primMST();
+
+    return 0;
+}
