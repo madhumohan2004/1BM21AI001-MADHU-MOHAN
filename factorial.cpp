@@ -1,23 +1,31 @@
+
 #include<iostream>
 using namespace std;
 
-int factorial(int n);
+class factorial{
 
-int main() {
+public:
+    int n;
+    int fact(int n){
+    if(n==0||n==1){
+        return 1;
+    }
+    else{
+        return n*fact(n-1);
+    }
+    }
 
-  int n;
+};
 
-  cout << "Enter a positive integer: ";
-  cin >> n;
 
-  cout << "Factorial of " << n << " = " << factorial(n);
 
-  return 0;
-}
+int main(){
+    factorial t;
+    int n;
+    cout<<"Enter a number : ";
+    cin>>t.n;
+    int res=t.fact(t.n);
+    cout<<"factorial of "<<t.n<<" is "<<res;
 
-int factorial(int n) {
-  if(n > 1)
-    return n * factorial(n - 1);
-  else
-    return 1;
+
 }
