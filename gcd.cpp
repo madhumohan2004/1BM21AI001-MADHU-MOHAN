@@ -1,24 +1,28 @@
+
 #include <iostream>
 using namespace std;
 
-int hcf(int n1, int n2);
+class hcf{
+    public:
+    int n1,n2;
 
-int main()
-{
-   int n1, n2;
-
-   cout << "Enter two positive integers: ";
-   cin >> n1 >> n2;
-
-   cout << "H.C.F of " << n1 << " & " <<  n2 << " is: " << hcf(n1, n2);
-
-   return 0;
-}
-
-int hcf(int n1, int n2)
+    int gcd(int n1, int n2)
 {
     if (n2 != 0)
-       return hcf(n2, n1 % n2);
+       return gcd(n2, n1 % n2);
     else
        return n1;
 }
+
+}t;
+
+int main()
+{
+
+   cout << "Enter two positive integers: ";
+   cin >>t.n1>>t.n2;
+
+   cout << "gcd of " << t.n1 << " & " <<  t.n2 << " is: " << t.gcd(t.n1, t.n2);
+
+}
+
