@@ -1,0 +1,48 @@
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+const int ASCII_SIZE = 256; // ASCII character set size
+
+void generateBadCharTable(const string& pattern, vector<int>& badCharTable) {
+    int patternLength = pattern.length();
+    for (int i = 0; i < ASCII_SIZE; ++i) {
+        badCharTable[i] = patternLength;
+    }
+    for (int i = 0; i < patternLength - 1; ++i) {
+        badCharTable[pattern[i]] = patternLength - 1 - i;
+    }
+}
+
+void searchHorspool(const string& text, const string& pattern) {
+    int textLength = text.length();
+    int patternLength = pattern.length();
+
+    vector<int> badCharTable(ASCII_SIZE);
+    generateBadCharTable(pattern, badCharTable);
+
+    int i = patternLength - 1;
+    while (i < textLength) {
+        int j = 0;
+        while (j < patternLength && text[i - j] == pattern[patternLength - 1 - j]) {
+            ++j;
+        }
+        
+        if (j == patternLength) {
+            cout << "Pattern found at index " << i - patternLength + 1 << endl;
+        }
+        
+        i += badCharTable[text[i]];
+    }
+}
+
+int main() {
+    string text = "ABCDABCABCDABCDABC";
+    string pattern = "ABCD";
+
+    searchHorspool(text, pattern);
+
+    return 0;
+}
