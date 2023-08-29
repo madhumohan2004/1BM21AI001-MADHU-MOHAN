@@ -1,0 +1,50 @@
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+bool subsetSumExists(vector<int>& nums, int target) {
+    int n = nums.size();
+    vector<vector<bool>> dp(n + 1, vector<bool>(target + 1, false));
+
+    // Base case: an empty subset can make sum 0
+    for (int i = 0; i <= n; ++i) {
+        dp[i][0] = true;
+    }
+
+    for (int i = 1; i <= n; ++i) {
+        for (int j = 1; j <= target; ++j) {
+            if (j < nums[i - 1]) {
+                dp[i][j] = dp[i - 1][j];
+            } else {
+                dp[i][j] = dp[i - 1][j] || dp[i - 1][j - nums[i - 1]];
+            }
+        }
+    }
+
+    return dp[n][target];
+}
+
+int main() {
+    int n;
+    cout << "Enter the number of elements: ";
+    cin >> n;
+
+    vector<int> nums(n);
+    cout << "Enter the elements: ";
+    for (int i = 0; i < n; ++i) {
+        cin >> nums[i];
+    }
+
+    int target;
+    cout << "Enter the target sum: ";
+    cin >> target;
+
+    if (subsetSumExists(nums, target)) {
+        cout << "There exists a subset with the given sum." << endl;
+    } else {
+        cout << "No subset with the given sum exists." << endl;
+    }
+
+    return 0;
+}
