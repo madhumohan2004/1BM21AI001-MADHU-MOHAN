@@ -1,0 +1,75 @@
+#include <iostream>
+#include <vector>
+#include <list>
+
+class HashTable {
+private:
+    int tableSize;
+    std::vector<std::list<int>> hashTable;
+
+    // Hash function to map a key to an index
+    int hash(int key) {
+        return key % tableSize;
+    }
+
+public:
+    HashTable(int size) : tableSize(size) {
+        hashTable.resize(tableSize);
+    }
+
+    // Insert a key into the hash table
+    void insert(int key) {
+        int index = hash(key);
+        hashTable[index].push_back(key);
+    }
+
+    // Search for a key in the hash table
+    bool search(int key) {
+        int index = hash(key);
+        for (const auto& value : hashTable[index]) {
+            if (value == key) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Remove a key from the hash table
+    void remove(int key) {
+        int index = hash(key);
+        hashTable[index].remove(key);
+    }
+
+    // Display the hash table
+    void display() {
+        for (int i = 0; i < tableSize; ++i) {
+            std::cout << "Bucket " << i << ": ";
+            for (const auto& value : hashTable[i]) {
+                std::cout << value << " -> ";
+            }
+            std::cout << "nullptr" << std::endl;
+        }
+    }
+};
+
+int main() {
+    HashTable hashTable(10); // Initialize a hash table with 10 buckets
+
+    hashTable.insert(5);
+    hashTable.insert(15);
+    hashTable.insert(25);
+    hashTable.insert(35);
+    hashTable.insert(6); // Collision with 15
+
+    std::cout << "Hash Table:" << std::endl;
+    hashTable.display();
+
+    std::cout << "Searching for 25: " << (hashTable.search(25) ? "Found" : "Not Found") << std::endl;
+    std::cout << "Searching for 10: " << (hashTable.search(10) ? "Found" : "Not Found") << std::endl;
+
+    hashTable.remove(15);
+    std::cout << "After removing 15:" << std::endl;
+    hashTable.display();
+
+    return 0;
+}
