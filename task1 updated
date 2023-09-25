@@ -1,0 +1,340 @@
+'''
+*****************************************************************************************
+*
+*        		===============================================
+*           		GeoGuide(GG) Theme (eYRC 2023-24)
+*        		===============================================
+*
+*  This script is to implement Task 1A of GeoGuide(GG) Theme (eYRC 2023-24).
+*  
+*  This software is made available on an "AS IS WHERE IS BASIS".
+*  Licensee/end user indemnifies and will keep e-Yantra indemnified from
+*  any and all claim(s) that emanate from the use of the Software or 
+*  breach of the terms of this agreement.
+*
+*****************************************************************************************
+'''
+
+# Team ID:			[ Team-ID ]
+# Author List:		[ Names of team members worked on this file separated by Comma: Name1, Name2, ... ]
+# Filename:			task_1a.py
+# Functions:	    [`ideantify_features_and_targets`, `load_as_tensors`,
+# 					 `model_loss_function`, `model_optimizer`, `model_number_of_epochs`, `training_function`,
+# 					 `validation_functions` ]
+
+####################### IMPORT MODULES #######################
+
+'''
+Purpose:
+---
+The following is the main function combining all the functions
+mentioned above. Go through this function to understand the flow
+of the script
+'''
+
+import pandas as pd
+import torch
+import numpy as np
+import torch.nn as nn
+from torch.utils.data import TensorDataset, DataLoader
+import torch.optim as optim
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
+
+def data_preprocessing(task_1a_dataframe):
+    ''' 
+    Purpose:
+    ---
+    This function will be used to load your csv dataset and preprocess it.
+    Preprocessing involves cleaning the dataset by removing unwanted features,
+    decision about what needs to be done with missing values, etc. Note that 
+    there are features in the csv file whose values are textual (e.g., Industry, 
+    Education Level, etc.) These features might be required for training the model
+    but cannot be given directly as strings for training. Hence this function 
+    should return an encoded dataframe in which all the textual features are 
+    numerically labeled.
+    
+    Input Arguments:
+    ---
+    `task_1a_dataframe`: [Dataframe]
+                          Pandas dataframe read from the provided dataset     
+    
+    Returns:
+    ---
+    `encoded_dataframe` : [ Dataframe ]
+                          Pandas dataframe that has all the features mapped to 
+                          numbers starting from zero
+
+    Example call:
+    ---
+    encoded_dataframe = data_preprocessing(task_1a_dataframe)
+    '''
+    
+    # Make a copy of the original dataframe to avoid modifying it
+    encoded_dataframe = task_1a_dataframe.copy()
+    
+    # Encode categorical features using LabelEncoder
+    label_encoders = {}
+    categorical_columns = ['Education', 'City', 'Gender', 'PaymentTier']
+    
+    for column in categorical_columns:
+        le = LabelEncoder()
+        encoded_dataframe[column] = le.fit_transform(encoded_dataframe[column])
+        label_encoders[column] = le
+    
+    # Handle missing values (you can choose a suitable strategy)
+    encoded_dataframe.fillna(0, inplace=True)  # Replace missing values with 0 for demonstration
+    
+    return encoded_dataframe
+
+def identify_features_and_targets(encoded_dataframe):
+    '''
+    Purpose:
+    ---
+    The purpose of this function is to define the features and
+    the required target labels. The function returns a python list
+    in which the first item is the selected features and second 
+    item is the target label
+
+    Input Arguments:
+    ---
+    `encoded_dataframe` : [ Dataframe ]
+                        Pandas dataframe that has all the features mapped to 
+                        numbers starting from zero
+    
+    Returns:
+    ---
+    `features_and_targets` : [ list ]
+                            python list in which the first item is the 
+                            selected features and second item is the target label
+
+    Example call:
+    ---
+    features_and_targets = identify_features_and_targets(encoded_dataframe)
+    '''
+
+    # Define the features (input) and the target (output) labels
+    features = encoded_dataframe.drop(columns=['LeaveOrNot'])
+    target = encoded_dataframe['LeaveOrNot']
+    
+    # Create a list containing the selected features and the target label
+    features_and_targets = [features, target]
+    
+    return features_and_targets
+
+def load_as_tensors(features_and_targets):
+    ''' 
+    Purpose:
+    ---
+    This function aims at loading your data (both training and validation)
+    as PyTorch tensors. Here you will have to split the dataset for training 
+    and validation, and then load them as as tensors. 
+    Training of the model requires iterating over the training tensors. 
+    Hence the training sensors need to be converted to an iterable dataset
+    object.
+    
+    Input Arguments:
+    ---
+    `features_and_targets` : [ list ]
+                            python list in which the first item is the 
+                            selected features and second item is the target label
+    
+    Returns:
+    ---
+    `tensors_and_iterable_training_data` : [ list ]
+                                        Items:
+                                        [0]: X_train_tensor: Training features loaded into Pytorch array
+                                        [1]: X_test_tensor: Feature tensors in validation data
+                                        [2]: y_train_tensor: Training labels as Pytorch tensor
+                                        [3]: y_test_tensor: Target labels as tensor in validation data
+                                        [4]: Iterable dataset object and iterating over it in 
+                                             batches, which are then fed into the model for processing
+
+    Example call:
+    ---
+    tensors_and_iterable_training_data = load_as_tensors(features_and_targets)
+    '''
+
+    # Unpack the features and target labels
+    features, target = features_and_targets
+
+    # Convert features and target labels to PyTorch tensors
+    X_train_tensor = torch.tensor(features.values, dtype=torch.float32)
+    y_train_tensor = torch.tensor(target.values, dtype=torch.float32)
+
+    # Split the data into training and validation sets
+    train_size = int(0.8 * len(features))
+    X_train, X_test = X_train_tensor[:train_size], X_train_tensor[train_size:]
+    y_train, y_test = y_train_tensor[:train_size], y_train_tensor[train_size:]
+
+    # Create iterable dataset objects for training
+    batch_size = 32
+    train_dataset = TensorDataset(X_train, y_train)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+
+    tensors_and_iterable_training_data = [X_train, X_test, y_train, y_test, train_loader]
+
+    return tensors_and_iterable_training_data
+
+class Salary_Predictor(nn.Module):
+    '''
+    Purpose:
+    ---
+    The architecture and behavior of your neural network model will be
+    defined within this class that inherits from nn.Module. Here you
+    also need to specify how the input data is processed through the layers. 
+    It defines the sequence of operations that transform the input data into 
+    the predicted output. When an instance of this class is created and data
+    is passed through it, the `forward` method is automatically called, and 
+    the output is the prediction of the model based on the input data.
+    
+    Returns:
+    ---
+    `predicted_output` : Predicted output for the given input data
+    '''
+
+    def __init__(self, input_dim):
+        super(Salary_Predictor, self).__init__()
+        # Define the layers of the neural network
+        self.fc1 = nn.Linear(input_dim, 64)
+        self.fc2 = nn.Linear(64, 32)
+        self.fc3 = nn.Linear(32, 1)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        '''
+        Define the activation functions
+        '''
+        x = torch.relu(self.fc1(x))
+        x = torch.relu(self.fc2(x))
+        predicted_output = self.sigmoid(self.fc3(x))
+        return predicted_output
+
+def model_loss_function():
+    '''
+    Purpose:
+    ---
+    To define the loss function for the model. Loss function measures 
+    how well the predictions of a model match the actual target values 
+    in training data.
+    
+    Input Arguments:
+    ---
+    None
+
+    Returns:
+    ---
+    `loss_function`: This can be a pre-defined loss function in PyTorch
+                    or can be user-defined
+
+    Example call:
+    ---
+    loss_function = model_loss_function()
+    '''
+    loss_function = nn.BCELoss()
+    return loss_function
+
+def model_optimizer(model):
+    '''
+    Purpose:
+    ---
+    To define the optimizer for the model. Optimizer is responsible 
+    for updating the parameters (weights and biases) in a way that 
+    minimizes the loss function.
+    
+    Input Arguments:
+    ---
+    `model`: An object of the 'Salary_Predictor' class
+
+    Returns:
+    ---
+    `optimizer`: Pre-defined optimizer from Pytorch
+
+    Example call:
+    ---
+    optimizer = model_optimizer(model)
+    '''
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    return optimizer
+
+def model_number_of_epochs():
+    '''
+    Purpose:
+    ---
+    To define the number of epochs for training the model
+
+    Input Arguments:
+    ---
+    None
+
+    Returns:
+    ---
+    `number_of_epochs`: [integer value]
+
+    Example call:
+    ---
+    number_of_epochs = model_number_of_epochs()
+    '''
+    number_of_epochs = 50
+    return number_of_epochs
+
+def training_function(model, number_of_epochs, tensors_and_iterable_training_data, loss_function, optimizer):
+    X_train, _, y_train, _, train_loader = tensors_and_iterable_training_data
+
+    model.train()
+
+    for epoch in range(number_of_epochs):
+        running_loss = 0.0
+
+        for inputs, labels in train_loader:
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = loss_function(outputs, labels)
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item()
+
+        avg_loss = running_loss / len(train_loader)
+        print(f'Epoch [{epoch + 1}/{number_of_epochs}], Loss: {avg_loss:.4f}')
+
+    return model
+
+def validation_function(trained_model, tensors_and_iterable_training_data):
+    _, X_val, _, y_val, val_loader = tensors_and_iterable_training_data
+
+    trained_model.eval()
+
+    correct_predictions = 0
+    total_samples = 0
+
+    with torch.no_grad():
+        for inputs, labels in val_loader:
+            outputs = trained_model(inputs)
+            predicted_labels = (outputs >= 0.5).float()
+            correct_predictions += (predicted_labels == labels).sum().item()
+            total_samples += labels.size(0)
+
+    model_accuracy = (correct_predictions / total_samples) * 100.0
+
+    return model_accuracy
+
+if __name__ == "__main__":
+    task_1a_dataframe = pd.read_csv('task_1a_dataset.csv')
+    encoded_dataframe = data_preprocessing(task_1a_dataframe)
+    features_and_targets = identify_features_and_targets(encoded_dataframe)
+    tensors_and_iterable_training_data = load_as_tensors(features_and_targets)
+    
+    model = Salary_Predictor()
+    loss_function = model_loss_function()
+    optimizer = model_optimizer(model)
+    number_of_epochs = model_number_of_epochs()
+    
+    trained_model = training_function(model, number_of_epochs, tensors_and_iterable_training_data, 
+                    loss_function, optimizer)
+    
+    model_accuracy = validation_function(trained_model,tensors_and_iterable_training_data)
+    print(f"Accuracy on the test set = {model_accuracy}")
+
+    X_train_tensor = tensors_and_iterable_training_data[0]
+    x = X_train_tensor[0]
+    jitted_model = torch.jit.save(torch.jit.trace(model, (x)), "task_1a_trained_model.pth")
