@@ -50,7 +50,7 @@ def load_dataset(file_path):
 ##############################################################
 
 # Data Preprocessing
-def data_preprocessing(task_1a_dataframe):
+def data_preprocessing(data):
     '''
     Purpose:
     ---
@@ -65,18 +65,18 @@ def data_preprocessing(task_1a_dataframe):
 
     Input Arguments:
     ---
-    `task_1a_dataframe`: [Dataframe]
-                       Pandas dataframe read from the provided dataset 
+    `data`: [Dataframe]
+           Pandas dataframe read from the provided dataset 
 
     Returns:
     ---
-    `encoded_dataframe`: [Dataframe]
-                        Pandas dataframe that has all the features mapped to 
-                        numbers starting from zero
+    `data`: [ Dataframe ]
+           Pandas dataframe that has all the features mapped to 
+           numbers starting from zero
 
     Example call:
     ---
-    encoded_dataframe = data_preprocessing(task_1a_dataframe)
+    data = data_preprocessing(data)
     '''
 
     #################    ADD YOUR CODE HERE    ##################
@@ -85,20 +85,20 @@ def data_preprocessing(task_1a_dataframe):
     
     onehot_encoder = OneHotEncoder(sparse=False)
     for column in categorical_columns:
-        encoded_columns = onehot_encoder.fit_transform(task_1a_dataframe[column].values.reshape(-1, 1))
+        encoded_columns = onehot_encoder.fit_transform(data[column].values.reshape(-1, 1))
         encoded_df = pd.DataFrame(encoded_columns, columns=[f'{column}_{i}' for i in range(encoded_columns.shape[1])])
-        task_1a_dataframe = pd.concat([task_1a_dataframe, encoded_df], axis=1)
-        task_1a_dataframe.drop([column], axis=1, inplace=True)
+        data = pd.concat([data, encoded_df], axis=1)
+        data.drop([column], axis=1, inplace=True)
 
     # Handle missing values (you can choose a suitable strategy)
-    task_1a_dataframe.fillna(0, inplace=True)  # Replace missing values with 0 for demonstration
+    data.fillna(0, inplace=True)  # Replace missing values with 0 for demonstration
 
-    return task_1a_dataframe
+    return data
 
 ##############################################################
 
 # Define features and target
-def identify_features_and_targets(encoded_dataframe):
+def identify_features_and_targets(data):
     '''
     Purpose:
     ---
@@ -109,24 +109,24 @@ def identify_features_and_targets(encoded_dataframe):
 
     Input Arguments:
     ---
-    `encoded_dataframe`: [Dataframe]
-                        Pandas dataframe that has all the features mapped to 
-                        numbers starting from zero
+    `data` : [ Dataframe ]
+             Pandas dataframe that has all the features mapped to 
+             numbers starting from zero
 
     Returns:
     ---
-    `features_and_targets`: [list]
+    `features_and_targets` : [ list ]
                             python list in which the first item is the 
                             selected features and second item is the target label
 
     Example call:
     ---
-    features_and_targets = identify_features_and_targets(encoded_dataframe)
+    features_and_targets = identify_features_and_targets(data)
     '''
 
     #################    ADD YOUR CODE HERE    ##################
-    X = encoded_dataframe.drop(columns=['LeaveOrNot'])
-    y = encoded_dataframe['LeaveOrNot']
+    X = data.drop(columns=['LeaveOrNot'])
+    y = data['LeaveOrNot']
     return X, y
 
 ##############################################################
@@ -140,19 +140,19 @@ def data_scaling(X_train, X_test):
 
     Input Arguments:
     ---
-    `X_train`: [array-like]
-               Training features
+    `X_train` : [array-like]
+                Training features
 
-    `X_test`: [array-like]
-              Testing features
+    `X_test` : [array-like]
+               Testing features
 
     Returns:
     ---
-    `X_train_scaled`: [array-like]
-                      Scaled training features
+    `X_train_scaled` : [array-like]
+                       Scaled training features
 
-    `X_test_scaled`: [array-like]
-                     Scaled testing features
+    `X_test_scaled` : [array-like]
+                      Scaled testing features
 
     Example call:
     ---
@@ -168,7 +168,7 @@ def data_scaling(X_train, X_test):
 ##############################################################
 
 # Convert data to PyTorch tensors
-def load_as_tensors(features_and_targets):
+def load_as_tensors(X_train, y_train, X_test, y_test):
     '''
     Purpose:
     ---
@@ -181,39 +181,46 @@ def load_as_tensors(features_and_targets):
 
     Input Arguments:
     ---
-    `features_and_targets`: [list]
-                           python list in which the first item is the 
-                           selected features and second item is the target label
+    `X_train` : [array-like]
+                Training features
+
+    `y_train` : [array-like]
+                Training labels
+
+    `X_test` : [array-like]
+               Testing features
+
+    `y_test` : [array-like]
+               Testing labels
 
     Returns:
     ---
-    `tensors_and_iterable_training_data`: [list]
-                                         Items:
-                                         [0]: X_train_tensor: Training features loaded into Pytorch array
-                                         [1]: y_train_tensor: Training labels as Pytorch tensor
-                                         [2]: X_test_tensor: Feature tensors in validation data
-                                         [3]: y_test_tensor: Target labels as tensor in validation data
+    `tensors_and_iterable_training_data` : [ list ]
+                                            Items:
+                                            [0]: X_train_tensor: Training features loaded into Pytorch array
+                                            [1]: X_test_tensor: Feature tensors in validation data
+                                            [2]: y_train_tensor: Training labels as Pytorch tensor
+                                            [3]: y_test_tensor: Target labels as tensor in validation data
+                                            [4]: Iterable dataset object and iterating over it in 
+                                                 batches, which are then fed into the model for processing
 
     Example call:
     ---
-    tensors_and_iterable_training_data = load_as_tensors(features_and_targets)
+    tensors_and_iterable_training_data = load_as_tensors(X_train, y_train, X_test, y_test)
     '''
 
     #################    ADD YOUR CODE HERE    ##################
-    X_train, X_test, y_train, y_test = train_test_split(features_and_targets[0], features_and_targets[1], test_size=0.2, random_state=42)
-    
-    X_train_tensor = torch.tensor(X_train.values, dtype=torch.float32)
+    X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
     y_train_tensor = torch.tensor(y_train.values, dtype=torch.float32)
-    X_test_tensor = torch.tensor(X_test.values, dtype=torch.float32)
+    X_test_tensor = torch.tensor(X_test, dtype=torch.float32)
     y_test_tensor = torch.tensor(y_test.values, dtype=torch.float32)
-    
     return X_train_tensor, y_train_tensor, X_test_tensor, y_test_tensor
 
 ##############################################################
 
 # Define the neural network model
 class Salary_Predictor(nn.Module):
-    def __init__(self):
+    def __init__(self, input_size):
         super(Salary_Predictor, self).__init__()
         self.fc1 = nn.Linear(input_size, 64)
         self.fc2 = nn.Linear(64, 32)
@@ -230,7 +237,7 @@ class Salary_Predictor(nn.Module):
 ##############################################################
 
 # Training function
-def train_model(model, number_of_epochs, tensors_and_iterable_training_data, loss_function, optimizer):
+def train_model(model, X_train_tensor, y_train_tensor, num_epochs, optimizer, loss_function):
     '''
     Purpose:
     ---
@@ -238,38 +245,37 @@ def train_model(model, number_of_epochs, tensors_and_iterable_training_data, los
 
     Input Arguments:
     ---
-    `model`: [nn.Module]
-             Neural network model
+    `model` : [nn.Module]
+              Neural network model
 
-    `number_of_epochs`: [integer]
-                        Number of training epochs
+    `X_train_tensor` : [torch.Tensor]
+                       Training features loaded into PyTorch tensor
 
-    `tensors_and_iterable_training_data`: [list]
-                                         Items:
-                                         [0]: X_train_tensor: Training features loaded into PyTorch array
-                                         [1]: y_train_tensor: Training labels as PyTorch tensor
-                                         [2]: X_test_tensor: Feature tensors in validation data
-                                         [3]: y_test_tensor: Target labels as tensor in validation data
+    `y_train_tensor` : [torch.Tensor]
+                       Training labels as PyTorch tensor
 
-    `loss_function`: [torch.nn]
-                      Loss function for the model
+    `num_epochs` : [int]
+                   Number of training epochs
 
-    `optimizer`: [torch.optim]
+    `optimizer` : [torch.optim]
                   Optimizer for updating model parameters
+
+    `loss_function` : [torch.nn]
+                      Loss function for the model
 
     Returns:
     ---
-    `trained_model`
+    None
 
     Example call:
     ---
-    trained_model = train_model(model, number_of_epochs, tensors_and_iterable_training_data, loss_function, optimizer)
+    train_model(model, X_train_tensor, y_train_tensor, num_epochs, optimizer, loss_function)
     '''
 
     #################    ADD YOUR CODE HERE    ##################
-    X_train_tensor, y_train_tensor, X_test_tensor, y_test_tensor = tensors_and_iterable_training_data
+    model.train()
     
-    for epoch in range(number_of_epochs):
+    for epoch in range(num_epochs):
         optimizer.zero_grad()
         outputs = model(X_train_tensor)
         loss = loss_function(outputs, y_train_tensor.view(-1, 1))
@@ -277,14 +283,12 @@ def train_model(model, number_of_epochs, tensors_and_iterable_training_data, los
         optimizer.step()
 
         if (epoch + 1) % 10 == 0:
-            print(f'Epoch [{epoch + 1}/{number_of_epochs}], Loss: {loss.item()}')
-    
-    return model
+            print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item()}')
 
 ##############################################################
 
 # Evaluation function
-def evaluate_model(trained_model, tensors_and_iterable_training_data):
+def evaluate_model(model, X_test_tensor, y_test_tensor):
     '''
     Purpose:
     ---
@@ -292,30 +296,29 @@ def evaluate_model(trained_model, tensors_and_iterable_training_data):
 
     Input Arguments:
     ---
-    `trained_model`: [nn.Module]
-                     Trained neural network model
+    `model` : [nn.Module]
+              Trained neural network model
 
-    `tensors_and_iterable_training_data`: [list]
-                                         Items:
-                                         [0]: X_train_tensor: Training features loaded into PyTorch array
-                                         [1]: y_train_tensor: Training labels as PyTorch tensor
-                                         [2]: X_test_tensor: Feature tensors in validation data
-                                         [3]: y_test_tensor: Target labels as tensor in the validation data
+    `X_test_tensor` : [torch.Tensor]
+                      Testing features loaded into PyTorch tensor
+
+    `y_test_tensor` : [torch.Tensor]
+                      Testing labels as PyTorch tensor
 
     Returns:
     ---
-    `accuracy`: [float]
-                Accuracy on the testing data
+    `accuracy` : [float]
+                 Accuracy on the testing data
 
     Example call:
     ---
-    accuracy = evaluate_model(trained_model, tensors_and_iterable_training_data)
+    accuracy = evaluate_model(model, X_test_tensor, y_test_tensor)
     '''
 
-    X_train_tensor, y_train_tensor, X_test_tensor, y_test_tensor = tensors_and_iterable_training_data
+    #################    ADD YOUR CODE HERE    ##################
     with torch.no_grad():
-        trained_model.eval()
-        test_outputs = trained_model(X_test_tensor)
+        model.eval()
+        test_outputs = model(X_test_tensor)
         predicted = (test_outputs >= 0.5).float()
         accuracy = (predicted == y_test_tensor.view(-1, 1)).sum().item() / len(y_test_tensor)
         return accuracy * 100
@@ -329,14 +332,20 @@ if __name__ == "__main__":
     preprocessed_data = data_preprocessing(data)
     
     # Identify features and targets
-    features_and_targets = identify_features_and_targets(preprocessed_data)
+    X, y = identify_features_and_targets(preprocessed_data)
+    
+    # Split data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    # Data scaling
+    X_train_scaled, X_test_scaled = data_scaling(X_train, X_test)
     
     # Convert data to PyTorch tensors
-    tensors_and_iterable_training_data = load_as_tensors(features_and_targets)
+    X_train_tensor, y_train_tensor, X_test_tensor, y_test_tensor = load_as_tensors(X_train_scaled, y_train, X_test_scaled, y_test)
     
     # Initialize the model
-    input_size = features_and_targets[0].shape[1]
-    model = Salary_Predictor()
+    input_size = X_train_tensor.shape[1]
+    model = Salary_Predictor(input_size)
     
     # Define loss function and optimizer
     criterion = nn.BCELoss()
@@ -344,11 +353,11 @@ if __name__ == "__main__":
     
     # Training
     num_epochs = 100
-    trained_model = train_model(model, num_epochs, tensors_and_iterable_training_data, criterion, optimizer)
+    train_model(model, X_train_tensor, y_train_tensor, num_epochs, optimizer, criterion)
     
     # Evaluation
-    accuracy = evaluate_model(trained_model, tensors_and_iterable_training_data)
+    accuracy = evaluate_model(model, X_test_tensor, y_test_tensor)
     print(f'Test Accuracy: {accuracy:.2f}%')
     
     # Save the trained model if needed
-    torch.save(trained_model.state_dict(), 'task_1a_trained_model.pth')
+    torch.save(model.state_dict(), 'task_1a_trained_model.pth')
