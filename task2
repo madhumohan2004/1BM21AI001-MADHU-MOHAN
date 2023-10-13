@@ -1,0 +1,143 @@
+'''
+*****************************************************************************************
+*
+*        		===============================================
+*           		Geo Guide (GG) Theme (eYRC 2023-24)
+*        		===============================================
+*
+*  This script is to implement Task 2A of Geo Guide (GG) Theme (eYRC 2023-24).
+*  
+*  This software is made available on an "AS IS WHERE IS BASIS".
+*  Licensee/end user indemnifies and will keep e-Yantra indemnified from
+*  any and all claim(s) that emanate from the use of the Software or 
+*  breach of the terms of this agreement.
+*
+*****************************************************************************************
+'''
+
+# Team ID:			[ Team-ID ]
+# Author List:		[ Names of team members worked on this file separated by Comma: Name1, Name2, ... ]
+# Filename:			task_2a.py
+# Functions:		detect_ArUco_details
+# 					[ Comma separated list of functions in this file ]
+
+####################### IMPORT MODULES #######################
+## You are not allowed to make any changes in this section. ##
+## You have to implement this task with the five available  ##
+## modules for this task                                    ##
+##############################################################
+import numpy as np
+import cv2
+from cv2 import aruco
+import math
+##############################################################
+
+################# ADD UTILITY FUNCTIONS HERE #################
+def detect_ArUco_details(image):
+    ArUco_details_dict = {}
+    ArUco_corners = {}
+
+    # Load the ArUco dictionary using cv2.aruco.getPredefinedDictionary()
+    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+
+    # Detect markers in the image using cv2.aruco.detectMarkers
+    corners, ids, rejectedImgPoints = cv2.aruco.detectMarkers(image, aruco_dict)
+
+    if ids is not None:
+        for i in range(len(ids)):
+            id = ids[i][0]
+            corner_points = corners[i][0]
+
+            # Calculate the center of the marker
+            center_x = int((corner_points[0][0] + corner_points[2][0]) / 2)
+            center_y = int((corner_points[0][1] + corner_points[2][1]) / 2)
+
+            # Calculate the angle from the vertical (not available in OpenCV 4.7.0)
+            angle = 0
+
+            ArUco_details_dict[id] = [[center_x, center_y], angle]
+            ArUco_corners[id] = corner_points
+
+    return ArUco_details_dict, ArUco_corners
+
+# Load the first image
+image = cv2.imread('aruco_0.png')
+
+# Perform ArUco marker detection
+ArUco_details_dict1, ArUco_corners1 = detect_ArUco_details(image)
+
+# Display or use ArUco details as needed
+print("aruco_0.png:")
+print(ArUco_details_dict1)
+print(ArUco_corners1)
+
+# Explicitly call the second function to draw circles on the first image
+image_with_circles = mark_ArUco_image(image, ArUco_details_dict1, ArUco_corners1)
+
+# Display the first image with circles
+cv2.imshow("aruco_0.png with Circles", image_with_circles)
+
+# Load the second image
+image = cv2.imread('aruco_1.png')
+
+# Perform ArUco marker detection for the second image
+ArUco_details_dict2, ArUco_corners2 = detect_ArUco_details(image)
+
+# Display or use ArUco details for the second image
+print("aruco_1.png:")
+print(ArUco_details_dict2)
+print(ArUco_corners2)
+
+# Explicitly call the second function to draw circles on the second image
+image_with_circles = mark_ArUco_image(image, ArUco_details_dict2, ArUco_corners2)
+
+# Display the second image with circles
+cv2.imshow("aruco_1.png with Circles", image_with_circles)
+
+
+
+
+##############################################################
+
+######### YOU ARE NOT ALLOWED TO MAKE CHANGES TO THE CODE BELOW #########	
+
+def mark_ArUco_image(image, ArUco_details_dict, ArUco_corners):
+    for ids, details in ArUco_details_dict.items():
+        center = details[0]
+        cv2.circle(image, center, 5, (0,0,255), -1)
+
+        corner = ArUco_corners[int(ids)]
+        cv2.circle(image, (int(corner[0][0]), int(corner[0][1])), 5, (50, 50, 50), -1)
+        cv2.circle(image, (int(corner[1][0]), int(corner[1][1])), 5, (0, 255, 0), -1)
+        cv2.circle(image, (int(corner[2][0]), int(corner[2][1])), 5, (128, 0, 255), -1)
+        cv2.circle(image, (int(corner[3][0]), int(corner[3][1])), 5, (25, 255, 255), -1)
+
+        tl_tr_center_x = int((corner[0][0] + corner[1][0]) / 2)
+        tl_tr_center_y = int((corner[0][1] + corner[1][1]) / 2) 
+
+        cv2.line(image,center,(tl_tr_center_x, tl_tr_center_y),(255,0,0),5)
+        display_offset = int(math.sqrt((tl_tr_center_x - center[0])**2+(tl_tr_center_y - center[1])**2))
+        cv2.putText(image,str(ids),(center[0]+int(display_offset/2),center[1]),cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
+        angle = details[1]
+        cv2.putText(image,str(angle),(center[0]-display_offset,center[1]),cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 2)
+    return image
+
+if __name__ == "__main__":
+
+    # path directory of images in test_images folder
+    img_dir_path = "public_test_cases/"
+
+    marker = 'aruco'
+
+    for file_num in range(0, 2):
+        img_file_path = img_dir_path +  marker + '_' + str(file_num) + '.png'
+
+        # read image using opencv
+        img = cv2.imread(img_file_path)
+
+        print('\n============================================')
+        print('\nFor '+ marker  + str(file_num) + '.png')
+   
+        ArUco_details_dict, ArUco_corners = detect_ArUco_details(img)
+
+        # Display or use ArUco details as needed
