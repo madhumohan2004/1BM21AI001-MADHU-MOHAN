@@ -1,78 +1,228 @@
+'''
+*****************************************************************************************
+*
+*        ===============================================
+*        GeoGuide(GG) Theme (eYRC 2023-24) - Task 2B
+*        ===============================================
+*
+*  This script is to implement Task 2B of GeoGuide(GG) Theme (eYRC 2023-24).
+*  
+*  This software is made available on an "AS IS WHERE IS BASIS".
+*  Licensee/end user indemnifies and will keep e-Yantra indemnified from
+*  any and all claim(s) that emanate from the use of the Software or 
+*  breach of the terms of this agreement.
+*
+*****************************************************************************************
+'''
+
+# IMPORTS (DO NOT CHANGE/REMOVE THESE IMPORTS)
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torchvision import datasets, models, transforms
+from torch.utils.data import DataLoader, Dataset
 import os
-import cv2
-import numpy as np
-import tensorflow as tf
-from tensorflow import keras
-from sklearn.model_selection import train_test_split
+from PIL import Image
+import ast
+import sys
+import shutil
+from sys import platform
+import subprocess
 
-def main():
-    # Define the path to your dataset directory
-    dataset_dir = "testlabelling"
+# Additional Imports
+'''
+You can import your required libraries here
+'''
 
-    # Initialize lists to store images and labels
-    images = []
-    labels = []
+# DECLARING VARIABLES (DO NOT CHANGE/REMOVE THESE VARIABLES)
+detected_list = []
 
-    # Define a function to extract the kill count label from a text file
-    def extract_coordinates_from_txt(txt_file):
-        # Initialize a list to store the extracted coordinates
-        coordinates = []
+# EVENT NAMES
+'''
+We have already specified the event names that you should train your model with.
+DO NOT CHANGE THE BELOW EVENT NAMES IN ANY CASE
+If you have accidentally created a different name for the event, you can create another 
+function to use the below shared event names wherever your event names are used.
+(Remember, the 'classify_event()' should always return the predefined event names)  
+'''
+combat = "combat"
+rehab = "humanitarianaid"
+military_vehicles = "militaryvehicles"
+fire = "fire"
+destroyed_building = "destroyedbuilding"
 
-        # Read the line from the specified text file
-        txt_file_path = os.path.join(dataset_dir, txt_file)
-        with open(txt_file_path, 'r') as file:
-            line = file.read().strip()
+# Define a Custom Test Dataset class
+class CustomTestDataset(Dataset):
+    def __init__(self, data_dir, transform=None):
+        self.data_dir = data_dir
+        self.transform = transform
+        self.image_paths = [os.path.join(data_dir, filename) for filename in os.listdir(data_dir)]
         
-        # Split the line into individual coordinate values
-        coordinate_values = line.split()  # Assumes coordinates are space-separated
-
-        # Convert each coordinate value to an integer and add to the list
-        for value in coordinate_values:
-            coordinates.append(int(value))
+    def __len__(self):
+        return len(self.image_paths)
+    
+    def __getitem__(self, idx):
+        image_path = self.image_paths[idx]
+        image = Image.open(image_path)
         
-        return coordinates
+        if self.transform:
+            image = self.transform(image)
+        
+        # You can assign labels as needed; for simplicity, use a dummy label (e.g., 0)
+        label = 0
+        
+        return image, label
 
-    # Load images and labels from the dataset
-    for image_file in os.listdir(dataset_dir):
-        if image_file.endswith(".jpg"):  # Assuming your images are in JPG format
-            img_path = os.path.join(dataset_dir, image_file)
-            image = cv2.imread(img_path)  # Load the image using OpenCV or your preferred library
-            label = extract_coordinates_from_txt("killcrd.txt")  # Call the function to parse the coordinates from the text file
-            images.append(image)
-            labels.append(label)
+# Define the test_model function
+def test_model(model, test_loader, criterion):
+    model.eval()  # Set the model to evaluation mode
 
-    # Convert lists to NumPy arrays
-    images = np.array(images)
-    labels = np.array(labels)
+    correct = 0
+    total = 0
+    test_loss = 0.0
 
-    # Split the dataset into training and testing sets
-    train_images, test_images, train_labels, test_labels = train_test_split(images, labels, test_size=0.2, random_state=42)
+    with torch.no_grad():  # Disable gradient computation during evaluation
+        for inputs, labels in test_loader:
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            test_loss += loss.item()
+            _, predicted = torch.max(outputs, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
 
-    # Define your neural network model
-    model = keras.Sequential([
-        keras.layers.Flatten(input_shape=(image_height, image_width, 3)),
-        keras.layers.Dense(128, activation='relu'),
-        keras.layers.Dense(64, activation='relu'),
-        keras.layers.Dense(num_classes, activation='softmax')
+    accuracy = 100 * correct / total
+    average_loss = test_loss / len(test_loader)
+
+    return accuracy, average_loss
+
+# Define the classify_event function
+def classify_event(image):
+    # Data Preprocessing and Augmentation
+    data_transforms = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
 
-    # Compile the model
-    model.compile(optimizer='adam',
-                loss='sparse_categorical_crossentropy',
-                metrics=['accuracy'])
-    num_epochs = 10
+    # Load the trained model
+    model = models.resnet18()
+    num_ftrs = model.fc.in_features
+    num_classes = 5  # Number of event classes
+    model.fc = nn.Linear(num_ftrs, num_classes)
 
+    # Load the trained model weights
+    model.load_state_dict(torch.load('trained_model.pth'))
+    model.eval()
 
-    # Train the model on the training dataset
-    model.fit(train_images, train_labels, epochs=num_epochs)
+    # Load the input image and preprocess it
+    image = Image.open(image)
+    image = data_transforms(image)
 
-    # Evaluate the model on the testing dataset
-    test_loss, test_acc = model.evaluate(test_images, test_labels)
-    print(f"Test accuracy: {test_acc}")
+    # Perform event classification
+    with torch.no_grad():
+        output = model(image.unsqueeze(0))
+        _, predicted = torch.max(output, 1)
 
-    # Make predictions on new data (similar to the inference step)
+    return predicted.item()
 
-    # Deploy the trained model in your application or system for image classification
+# ADDITIONAL FUNCTIONS
+'''
+Although not required but if there are any additional functions that you're using, you shall add them here. 
+'''
+
+# Classification Function
+from PIL import Image
+
+def classification(img_name_list):
+    detected_list = []
+
+    for img_index in range(len(img_name_list)):
+        img_path = "./test/" + str(img_name_list[img_index])
+
+        # Check the image format and convert it to JPEG if necessary
+        if img_path.lower().endswith(('.jpg', '.jpeg')):
+            # The image is already in JPEG format
+            img = Image.open(img_path)
+        else:
+            # The image is in a different format; convert it to JPEG
+            img = Image.open(img_path)
+            img = img.convert('RGB')  # Ensure it's in RGB mode
+            img_path = img_path.rsplit('.', 1)[0] + '.jpg'
+            img.save(img_path, 'JPEG')
+
+        detected_event = classify_event(img_path)
+        if detected_event == 0:
+            detected_list.append("combat")
+        elif detected_event == 1:
+            detected_list.append("rehab")
+        elif detected_event == 2:
+            detected_list.append("military_vehicles")
+        elif detected_event == 3:
+            detected_list.append("fire")
+        elif detected_event == 4:
+            detected_list.append("destroyed_building")
+
+    return detected_list
+
+# Processing Detected List
+def detected_list_processing(detected_list):
+    try:
+        detected_events = open("detected_events.txt", "w")
+        detected_events.writelines(str(detected_list))
+    except Exception as e:
+        print("Error: ", e)
+
+# Input Function
+def input_function():
+    if platform == "win32":
+        try:
+            subprocess.run("input.exe")
+        except Exception as e:
+            print("Error: ", e)
+    if platform == "linux":
+        try:
+            subprocess.run("./input")
+        except Exception as e:
+            print("Error: ", e)
+    img_names = open("image_names.txt", "r")
+    img_name_str = img_names.read()
+
+    img_name_list = ast.literal_eval(img_name_str)
+    return img_name_list
+    
+def output_function():
+    if platform == "win32":
+        try:
+            subprocess.run("output.exe")
+        except Exception as e:
+            print("Error: ", e)
+    if platform == "linux":
+        try:
+            subprocess.run("./output")
+        except Exception as e:
+            print("Error: ", e)
+
+###################################################################################################
+def main():
+    ##### Input #####
+    img_name_list = input_function()
+    #################
+
+    ##### Process #####
+    detected_list = classification(img_name_list)
+    detected_list_processing(detected_list)
+    ###################
+
+    ##### Output #####
+    output_function()
+    ##################
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print('Interrupted')
+        if os.path.exists('events'):
+            shutil.rmtree('events')
+        sys.exit()
